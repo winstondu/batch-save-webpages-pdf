@@ -104,19 +104,9 @@ async function main() {
      * First, we use headful mode to bypass paywall and snapshot the site page
      * Then, we reopen our saved, paywall-less local snapshots and save as pdf.
      */
-
-    // var { writing } = "test";
-    // try {
-    //     // Output
-    //     fs_module.mkdirSync(__dirname + "/out", { recursive: true });
-    //     // Open file and "truncate" it (i.e. wipe it)
-    //     fs_module.writeFileSync(__dirname + "/out/pikachu.txt", writing);
-    // } catch (err) {
-    //     console.error(err);
-    // };
     console.log("Grabbing Snapshot " + outFolder);
-    var outputFileNames = await GetSnapshots(chromePath, outFolder, urls);
-    console.log(outputFileNames);
+    var outputMhtFileNames = await GetSnapshots(chromePath, outFolder, urls);
+    console.log(outputMhtFileNames);
     // If the user asked for PDF, we will now 
     process.exit(0);
 }
@@ -132,8 +122,8 @@ async function GetSnapshots(chromePath, outFolder, urls) {
             `--load-extension=${paywallBypassPath}`
         ]
     });
-    var snapshot_threads = 
-        urls.map((value)=>GetSnapshotTab(value, outFolder, browser));
+    var snapshot_threads =
+        urls.map((value) => GetSnapshotTab(value, outFolder, browser));
     var outputFileNames = await Promise.all(snapshot_threads);
     console.log(outputFileNames);
     // Now we can run the following in headless chrome to actually save it to a pdf.
@@ -168,10 +158,9 @@ async function GetSnapshotTab(url, outFolder, browser) {
     const { data } = await session.send('Page.captureSnapshot');
     try {
         // Output
-        if (!fs_module.existsSync(outFolder)){
+        if (!fs_module.existsSync(outFolder)) {
             fs_module.mkdirSync(outFolder, { recursive: true });
         }
-        // Open file and "truncate" it (i.e. wipe it)
         fs_module.writeFileSync(outFolder + "/" + outputFileName, data);
         console.log(`The file "${outputFileName}" was saved! (Location Below)`);
         console.log(outFolder);
