@@ -7,9 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "colors": "0.x.x",
-    "express": "2.3.x",
-    "optimist": "0.2.x"
+    "puppeteer-core":">=1.15.0",
+    "fs":"0.0.1-security",
+    "readline":">=1.2.0",
+    "minimist":">1.1.0"
   },
   "repository": {
     "type": "git",
