@@ -1,6 +1,6 @@
 {
   "name": "batch-save-webpages",
-  "version": "0.9.0",
+  "version": "0.9.5",
   "description": "Batch Save Web Links using Chrome Puppeteer",
   "main": "html2pdf.js",
   "scripts": {

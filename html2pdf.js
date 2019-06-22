@@ -3,9 +3,10 @@
 // Run this as follows (cd into the right folder, and type 'node autohtml2pdf.js')
 
 const puppeteer = require('puppeteer-core');
-const fs_module = require('fs');
 const readline_module = require('readline');
 const minimist = require('minimist');
+const fs_module = require('fs');
+const path = require('path');
 
 const paywallBypassPath = __dirname + String.raw`.\bypass-paywalls-chrome-master`;
 const defaultChromePath = String.raw`C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`;
@@ -61,14 +62,118 @@ async function readURLs(file_path) {
     });
 }
 
+async function GetSnapshots(chromePath, outFolder, urls) {
+    console.log("Using extension located at: " + paywallBypassPath);
+    const browser = await puppeteer.launch({
+        devtools: true,
+        headless: false, // extension are allowed only in the head-full mode
+        executablePath: chromePath,
+        args: [
+            `--disable-extensions-except=${paywallBypassPath}`,
+            `--load-extension=${paywallBypassPath}`
+        ]
+    });
+    var snapshot_threads =
+        urls.map((value) => GetSnapshotTab(value, outFolder, browser, ".mht"));
+    var outputFileNames = await Promise.all(snapshot_threads);
+    console.log(outputFileNames);
+    // Now we can run the following in headless chrome to actually save it to a pdf.
+    // C:\"Program Files (x86)"\Google\Chrome\Application\chrome.exe --headless  --print-to-pdf=C:\Users\wenha\Documents\ffs_module.pdf C:\Users\wenha\Documents\ProgrammingProjects\PuppeteerLoginDuplicate.mht
+    // If needed, we can use --user-data-dir=
+    //await page.pdf({ format: 'A4', path:"test.pdf" });
+    browser.close();
+    return outputFileNames;
+}
+
+async function GetPDFs(chromePath, outFolder, paths) {
+    const browser = await puppeteer.launch({
+        headless: true, // extension are allowed only in the head-full mode
+        executablePath: chromePath,
+    });
+    var snapshot_threads =
+        paths.map((value) => GetSnapshotTab(value, outFolder, browser, ".pdf"));
+    var outputFileNames = await Promise.all(snapshot_threads);
+    console.log("Saved:\n" + outputFileNames);
+    // Now we can run the following in headless chrome to actually save it to a pdf.
+    // C:\"Program Files (x86)"\Google\Chrome\Application\chrome.exe --headless  --print-to-pdf=C:\Users\wenha\Documents\ffs_module.pdf C:\Users\wenha\Documents\ProgrammingProjects\PuppeteerLoginDuplicate.mht
+    // If needed, we can use --user-data-dir=
+    //await page.pdf({ format: 'A4', path:"test.pdf" });
+    browser.close();
+    return outputFileNames;
+}
+
+async function GetSnapshotTab(urlOrPath, outFolder, browser, extension = ".mht") {
+    const page = await browser.newPage()
+    if (extension == ".pdf"){
+        urlOrPath = `file:${urlOrPath}`;
+    }
+    await page.goto(urlOrPath, {
+        waitUntil: 'networkidle2'
+    }).catch(error => {console.error(error); return [];});
+    page.setViewport({
+        width: 1920,
+        height: 1080
+    });
+
+    let outputFileName = await page.evaluate(() => {
+        return document.title
+    });
+    // Must make sure we don't have a \\ or a / in the final filename.
+    outputFileName = outputFileName.replace('/', '-').replace('\\', '-');
+
+    if (extension == ".mht") {
+        // Save as mhtml, a niche feature from:
+        // https://github.com/GoogleChrome/puppeteer/issues/3575
+        page.target().createCDPSession();
+        const session = await page.target().createCDPSession();
+        await session.send('Page.enable');
+        const { data } = await session.send('Page.captureSnapshot');
+
+        saveFile(data, outputFileName, outFolder, extension/*=".mht"*/);
+        return outputFileName;
+    } else if (extension == ".pdf") {
+        await page.pdf({
+            path: (outFolder+"/"+outputFileName + extension),
+            format: 'letter'
+        });
+        return outputFileName;
+    }
+    else {
+        // Todo, change to error for better handling.
+        console.log("No valid extension specified. Returning empty string.");
+        return "";
+    }
+}
+
+function saveFile(data, outputFileName, outFolder, extension = ".mht") {
+    outputFileName = outputFileName + extension;
+    try {
+        // Output
+        if (!fs_module.existsSync(outFolder)) {
+            fs_module.mkdirSync(outFolder, { recursive: true });
+        }
+        fs_module.writeFileSync(outFolder + "/" + outputFileName, data);
+        console.log(`The file "${outputFileName}" was saved! (Location Below)`);
+        console.log(outFolder);
+    } catch (err) {
+        console.error(err);
+    };
+}
+
+
 async function main() {
     // Parse Command Line arguments
     var user_arguments = minimist(process.argv.slice(2));
     console.dir(user_arguments);
+    var file_path = ("urls-file" in user_arguments ? user_arguments['urls-file'] : undefined);
+    const mhtOnly = ("mht-only" in user_arguments ? user_arguments['mht-only'] : false);
+    const outFolder = ("outFolder" in user_arguments ? path.resolve(user_arguments["outFolder"]) : defaultOutputDir);
     const chromePath = ("chromePath" in user_arguments ? user_arguments["chromePath"] : defaultChromePath);
-    const outFolder = ("outFolder" in user_arguments ? user_arguments["outFolder"] : defaultOutputDir);
-    var file_path = ("urls" in user_arguments ? user_arguments['urls'] : undefined);
 
+    if (!fs_module.existsSync(outFolder)){
+        console.log("Error: Given outFolder is not valid!");
+        return;
+    }
     // Read from input urls file.
     // (If no file containing the url inputs was given, prompt the user for one).
     console.log("Enter a text to read from (or press enter for default of input.txt)");
@@ -106,68 +211,15 @@ async function main() {
      */
     console.log("Grabbing Snapshot " + outFolder);
     var outputMhtFileNames = await GetSnapshots(chromePath, outFolder, urls);
-    console.log(outputMhtFileNames);
-    // If the user asked for PDF, we will now 
+    console.log("Saved " + outputMhtFileNames);
+    // If the user asked for PDF, we will now generate the pdf.
+    var outputMhtLocations = outputMhtFileNames.map((e)=>outFolder+"/"+e+".mht");
+    if (!mhtOnly) {
+        var outputPdfFileNames = await GetPDFs(chromePath, outFolder, /*paths =*/ outputMhtLocations);
+        console.log("Saved PDFs:");
+        console.log(outputPdfFileNames);
+    }
     process.exit(0);
-}
-
-async function GetSnapshots(chromePath, outFolder, urls) {
-    console.log(paywallBypassPath)
-    const browser = await puppeteer.launch({
-        devtools: true,
-        headless: false, // extension are allowed only in the head-full mode
-        executablePath: chromePath,
-        args: [
-            `--disable-extensions-except=${paywallBypassPath}`,
-            `--load-extension=${paywallBypassPath}`
-        ]
-    });
-    var snapshot_threads =
-        urls.map((value) => GetSnapshotTab(value, outFolder, browser));
-    var outputFileNames = await Promise.all(snapshot_threads);
-    console.log(outputFileNames);
-    // Now we can run the following in headless chrome to actually save it to a pdf.
-    // C:\"Program Files (x86)"\Google\Chrome\Application\chrome.exe --headless  --print-to-pdf=C:\Users\wenha\Documents\ffs_module.pdf C:\Users\wenha\Documents\ProgrammingProjects\PuppeteerLoginDuplicate.mht
-    // If needed, we can use --user-data-dir=
-    //await page.pdf({ format: 'A4', path:"test.pdf" });
-    browser.close();
-    return outputFileNames;
-}
-
-async function GetSnapshotTab(url, outFolder, browser) {
-    const page = await browser.newPage()
-    await page.goto(url, {
-        waitUntil: 'networkidle2'
-    });
-    page.setViewport({
-        width: 1920,
-        height: 1080
-    });
-
-    let outputFileName = await page.evaluate(() => {
-        return document.title
-    });
-    // Must make sure we don't have a \\ or a / in the final filename.
-    outputFileName = outputFileName.replace('/', '-').replace('\\', '-');
-    outputFileName = outputFileName + ".mht";
-    page.target().createCDPSession();
-    const session = await page.target().createCDPSession();
-    await session.send('Page.enable');
-    // Save as mhtml, a niche feature from:
-    // https://github.com/GoogleChrome/puppeteer/issues/3575
-    const { data } = await session.send('Page.captureSnapshot');
-    try {
-        // Output
-        if (!fs_module.existsSync(outFolder)) {
-            fs_module.mkdirSync(outFolder, { recursive: true });
-        }
-        fs_module.writeFileSync(outFolder + "/" + outputFileName, data);
-        console.log(`The file "${outputFileName}" was saved! (Location Below)`);
-        console.log(outFolder);
-    } catch (err) {
-        console.error(err);
-    };
-    return outputFileName;
 }
 
 main();

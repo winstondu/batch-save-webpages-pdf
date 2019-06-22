@@ -22,6 +22,8 @@ not support print.
 For example, [Firefox Universal Print Add-on](https://legacycollector.org/firefox-addons/2513/index.html) is no longer
 usable due to the fact that add-ons have been wholesale deprecated by Mozilla in favor of WebExtensions.
 
+Other solutions, like [this one](https://blog.risingstack.com/pdf-from-html-node-js-puppeteer/#option1), do not generate high-quality pdfs.
+
 Thus, if you want to batch save webpages to PDF(especially those using a paywall), this script is your best shot.
 It launches Chrome and uses the [Bypass Paywalls Extension](https://github.com/iamadamdev/bypass-paywalls-chrome) to access
 news articles. **Thus, no password to any news site is required!**
@@ -45,9 +47,10 @@ node html2pdf.js
 ## Additional Documentation:
 Options can be:
 
-* `--urls` - the name of the file you are trying to read a list of urls from.
-* `--mht_only` - whether or not to do only MHTML instead of generating PDFs.
+* `--urls-file` - the name of the file you are trying to read a list of urls from.
+* `--mht-only` - whether or not to do only MHTML instead of generating PDFs.
 * `--outFolder` - where to place all output files. (Defaults to the 'Out' Folder in this directory)
+* `--chromePath` - the path to the chrome executable on the system.
 
 ## Credits
 - Big thanks to [Yunyu Lin](https://github.com/yunyu) for telling me about the MHTML Snapshot ability in Puppeteer!
