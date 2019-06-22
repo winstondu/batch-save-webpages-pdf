@@ -1,0 +1,24 @@
+{
+  "name": "batch-save-webpages",
+  "version": "0.9.0",
+  "description": "Batch Save Web Links using Chrome Puppeteer",
+  "main": "html2pdf.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "colors": "0.x.x",
+    "express": "2.3.x",
+    "optimist": "0.2.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/winstondu/batch-save-webpages-pdf.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/winstondu/batch-save-webpages-pdf/issues"
+  },
+  "homepage": "https://github.com/winstondu/batch-save-webpages-pdf#readme"
+}
