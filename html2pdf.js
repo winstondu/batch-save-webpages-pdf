@@ -107,12 +107,12 @@ async function GetPDFs(chromePath, outFolder, paths) {
  */
 async function GetSnapshotTab(urlOrPath, outFolder, browser, extension = ".mht") {
     const page = await browser.newPage()
-    if (extension == ".pdf"){
+    if (extension == ".pdf") {
         urlOrPath = `file:${urlOrPath}`;
     }
     await page.goto(urlOrPath, {
         waitUntil: 'networkidle2'
-    }).catch(error => {console.error(error); return [];});
+    }).catch(error => { console.error(error); return []; });
     page.setViewport({
         width: 1920,
         height: 1080
@@ -136,7 +136,7 @@ async function GetSnapshotTab(urlOrPath, outFolder, browser, extension = ".mht")
         return outputFileName;
     } else if (extension == ".pdf") {
         await page.pdf({
-            path: (outFolder+"/"+outputFileName + extension),
+            path: (outFolder + "/" + outputFileName + extension),
             format: 'letter'
         });
         return outputFileName;
@@ -172,7 +172,7 @@ async function main() {
     const outFolder = ("outFolder" in user_arguments ? path.resolve(user_arguments["outFolder"]) : defaultOutputDir);
     const chromePath = ("chromePath" in user_arguments ? user_arguments["chromePath"] : defaultChromePath);
 
-    if (!fs_module.existsSync(outFolder)){
+    if (!fs_module.existsSync(outFolder)) {
         console.log("Error: Given outFolder is not valid!");
         return;
     }
@@ -214,13 +214,13 @@ async function main() {
     console.log("Grabbing Snapshots into " + outFolder);
     var outputMhtFileNames = await GetSnapshots(chromePath, outFolder, urls);
     console.log("Saved Snapshots:");
-    outputMhtFileNames.map((el)=>console.log(el)); // Output them all.
+    outputMhtFileNames.map((el) => console.log(el)); // Output them all.
     // If the user asked for PDF, we will now generate the pdf.
-    var outputMhtLocations = outputMhtFileNames.map((e)=>outFolder+"/"+e+".mht");
+    var outputMhtLocations = outputMhtFileNames.map((e) => outFolder + "/" + e + ".mht");
     if (!mhtOnly) {
         var outputPdfFileNames = await GetPDFs(chromePath, outFolder, /*paths =*/ outputMhtLocations);
         console.log("Saved PDFs:");
-        outputPdfFileNames.map((el)=>console.log(el));
+        outputPdfFileNames.map((el) => console.log(el));
     }
     process.exit(0);
 }

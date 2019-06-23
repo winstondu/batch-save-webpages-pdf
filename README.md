@@ -44,6 +44,13 @@ Finally, just run the program.
 node html2pdf.js
 ```
 
+If this script cannot find Chrome, look for the path to your chrome executable on your computer.
+You can do this by right-clicking your chrome shortcut, and looking for where it links to.
+Then run the script as follows (replacing "path/to/chrome.exe" with the location of `chrome.exe`):
+```
+node html2pdf.js --chromePath="path/to/chrome.exe"
+```
+
 ## Additional Documentation:
 Options can be:
 
@@ -53,7 +60,7 @@ Options can be:
 * `--chromePath` - the path to the chrome executable on the system.
 
 Due to current bugs and limitations of Chrome, this script uses a complex workaround to accomplish its objective.
-Due to the requirement to use a bypass paywalls extension, this script launches headful chrome since (extensions are not supported in headless mode)[https://github.com/GoogleChrome/puppeteer/issues/4503)].
+Due to the requirement to use a bypass paywalls extension, this script launches headful chrome since [extensions are not supported in headless mode](https://github.com/GoogleChrome/puppeteer/issues/4503).
 However, due to [this bug](https://bugs.chromium.org/p/chromium/issues/detail?id=753118), printing to pdf is only
 possible using headless chrome.
 Thus, this script first downloads snapshots of all article site tabs using headful chrome, followed by reopening them
