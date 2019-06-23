@@ -16,6 +16,9 @@ const sleep = (waitTimeInMs) => new Promise(resolve => setTimeout(resolve, waitT
 // See: https://gokatz.me/blog/automate-chrome-extension-testing/
 // Current limiation; https://github.com/GoogleChrome/puppeteer/issues/2486
 
+/**
+ * A one-invocation of getting Command-Line Input (CLI) from the user.
+ */
 async function consoleInput() {
     var console_io = readline_module.createInterface({
         input: process.stdin,
@@ -62,6 +65,9 @@ async function readURLs(file_path) {
     });
 }
 
+/**
+ * Code to open headful chrome with extensions, navigate to urls, and snapshot them.
+ */
 async function GetSnapshots(chromePath, outFolder, urls) {
     console.log("Using extension located at: " + paywallBypassPath);
     const browser = await puppeteer.launch({
@@ -76,32 +82,29 @@ async function GetSnapshots(chromePath, outFolder, urls) {
     var snapshot_threads =
         urls.map((value) => GetSnapshotTab(value, outFolder, browser, ".mht"));
     var outputFileNames = await Promise.all(snapshot_threads);
-    console.log(outputFileNames);
-    // Now we can run the following in headless chrome to actually save it to a pdf.
-    // C:\"Program Files (x86)"\Google\Chrome\Application\chrome.exe --headless  --print-to-pdf=C:\Users\wenha\Documents\ffs_module.pdf C:\Users\wenha\Documents\ProgrammingProjects\PuppeteerLoginDuplicate.mht
-    // If needed, we can use --user-data-dir=
-    //await page.pdf({ format: 'A4', path:"test.pdf" });
     browser.close();
     return outputFileNames;
 }
 
+/**
+ * Code to open headless chrome, navigate to local mht files, and print to pdf.
+ */
 async function GetPDFs(chromePath, outFolder, paths) {
     const browser = await puppeteer.launch({
-        headless: true, // extension are allowed only in the head-full mode
+        headless: true, // extension are allowed only in the headful mode
         executablePath: chromePath,
     });
     var snapshot_threads =
         paths.map((value) => GetSnapshotTab(value, outFolder, browser, ".pdf"));
     var outputFileNames = await Promise.all(snapshot_threads);
-    console.log("Saved:\n" + outputFileNames);
-    // Now we can run the following in headless chrome to actually save it to a pdf.
-    // C:\"Program Files (x86)"\Google\Chrome\Application\chrome.exe --headless  --print-to-pdf=C:\Users\wenha\Documents\ffs_module.pdf C:\Users\wenha\Documents\ProgrammingProjects\PuppeteerLoginDuplicate.mht
-    // If needed, we can use --user-data-dir=
-    //await page.pdf({ format: 'A4', path:"test.pdf" });
     browser.close();
     return outputFileNames;
 }
 
+/**
+ * Code for the tab to save itself, either via a snapshot or print to pdf
+ * (The input browser instance must be headless to print to pdf).
+ */
 async function GetSnapshotTab(urlOrPath, outFolder, browser, extension = ".mht") {
     const page = await browser.newPage()
     if (extension == ".pdf"){
@@ -148,7 +151,6 @@ async function GetSnapshotTab(urlOrPath, outFolder, browser, extension = ".mht")
 function saveFile(data, outputFileName, outFolder, extension = ".mht") {
     outputFileName = outputFileName + extension;
     try {
-        // Output
         if (!fs_module.existsSync(outFolder)) {
             fs_module.mkdirSync(outFolder, { recursive: true });
         }
@@ -209,15 +211,16 @@ async function main() {
      * First, we use headful mode to bypass paywall and snapshot the site page
      * Then, we reopen our saved, paywall-less local snapshots and save as pdf.
      */
-    console.log("Grabbing Snapshot " + outFolder);
+    console.log("Grabbing Snapshots into " + outFolder);
     var outputMhtFileNames = await GetSnapshots(chromePath, outFolder, urls);
-    console.log("Saved " + outputMhtFileNames);
+    console.log("Saved Snapshots:");
+    outputMhtFileNames.map((el)=>console.log(el)); // Output them all.
     // If the user asked for PDF, we will now generate the pdf.
     var outputMhtLocations = outputMhtFileNames.map((e)=>outFolder+"/"+e+".mht");
     if (!mhtOnly) {
         var outputPdfFileNames = await GetPDFs(chromePath, outFolder, /*paths =*/ outputMhtLocations);
         console.log("Saved PDFs:");
-        console.log(outputPdfFileNames);
+        outputPdfFileNames.map((el)=>console.log(el));
     }
     process.exit(0);
 }

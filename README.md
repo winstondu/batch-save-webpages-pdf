@@ -52,6 +52,18 @@ Options can be:
 * `--outFolder` - where to place all output files. (Defaults to the 'Out' Folder in this directory)
 * `--chromePath` - the path to the chrome executable on the system.
 
+Due to current bugs and limitations of Chrome, this script uses a complex workaround to accomplish its objective.
+Due to the requirement to use a bypass paywalls extension, this script launches headful chrome since (extensions are not supported in headless mode)[https://github.com/GoogleChrome/puppeteer/issues/4503)].
+However, due to [this bug](https://bugs.chromium.org/p/chromium/issues/detail?id=753118), printing to pdf is only
+possible using headless chrome.
+Thus, this script first downloads snapshots of all article site tabs using headful chrome, followed by reopening them
+all in headless chrome to accomplish print to pdf.
+
+## Planned Development Timeline
+Version 0.9.5 - Initial Repo (Launched June 22, 2019)
+Version 1.0.0 - Accomplish batching of url snapshot and printing, in case user submits a large number of urls. (In progress)
+Version 1.1.0 - Integrate capability into a launchable [MicroServer](https://github.com/alvarcarto/url-to-pdf-api)
+
 ## Credits
 - Big thanks to [Yunyu Lin](https://github.com/yunyu) for telling me about the MHTML Snapshot ability in Puppeteer!
 
